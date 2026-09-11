@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Overlays & Modals
     const mainMenuScreen = document.getElementById('mainMenuScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
+    const victoryScreen = document.getElementById('victoryScreen');
     const resultTitle = document.getElementById('resultTitle');
     const resultSub = document.getElementById('resultSub');
     const bossWarningOverlay = document.getElementById('bossWarningOverlay');
@@ -47,12 +48,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetScoreBtn = document.getElementById('resetScoreBtn');
     const playAgainBtn = document.getElementById('playAgainBtn');
     const backToMenuBtn = document.getElementById('backToMenuBtn');
+    const vicPlayAgainBtn = document.getElementById('vicPlayAgainBtn');
+    const vicBackToMenuBtn = document.getElementById('vicBackToMenuBtn');
 
     // Final Stats
     const finalScoreVal = document.getElementById('finalScoreVal');
     const finalHighScoreVal = document.getElementById('finalHighScoreVal');
     const finalWaveVal = document.getElementById('finalWaveVal');
     const finalEnemiesVal = document.getElementById('finalEnemiesVal');
+    const vicFinalScoreVal = document.getElementById('vicFinalScoreVal');
+    const vicFinalHighScoreVal = document.getElementById('vicFinalHighScoreVal');
+    const vicFinalWaveVal = document.getElementById('vicFinalWaveVal');
+    const vicFinalEnemiesVal = document.getElementById('vicFinalEnemiesVal');
     const menuHighDisplay = document.getElementById('menuHighDisplay');
     const modalHighScoreVal = document.getElementById('modalHighScoreVal');
 
@@ -849,6 +856,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         mainMenuScreen.classList.add('hidden');
         gameOverScreen.classList.add('hidden');
+        victoryScreen.classList.add('hidden');
         gameHud.classList.remove('hidden');
 
         setupWave(wave);
@@ -945,6 +953,7 @@ document.addEventListener('DOMContentLoaded', () => {
         finalEnemiesVal.textContent = String(enemiesDestroyed);
 
         gameOverScreen.classList.remove('hidden');
+        victoryScreen.classList.add('hidden');
     }
 
     function triggerVictory() {
@@ -954,17 +963,13 @@ document.addEventListener('DOMContentLoaded', () => {
         gameHud.classList.add('hidden');
         bossHpContainer.classList.add('hidden');
 
-        resultTitle.textContent = "VICTORY!";
-        resultTitle.className = "victory-title";
-        resultSub.textContent = "MISSION ACCOMPLISHED — SKY SAVED!";
-        resultSub.className = "gameover-sub victory-sub";
+        vicFinalScoreVal.textContent = String(score).padStart(6, '0');
+        vicFinalHighScoreVal.textContent = String(highScore).padStart(6, '0');
+        vicFinalWaveVal.textContent = `5 / 5`;
+        vicFinalEnemiesVal.textContent = String(enemiesDestroyed);
 
-        finalScoreVal.textContent = String(score).padStart(6, '0');
-        finalHighScoreVal.textContent = String(highScore).padStart(6, '0');
-        finalWaveVal.textContent = `WAVE ${String(wave).padStart(2, '0')}`;
-        finalEnemiesVal.textContent = String(enemiesDestroyed);
-
-        gameOverScreen.classList.remove('hidden');
+        gameOverScreen.classList.add('hidden');
+        victoryScreen.classList.remove('hidden');
     }
 
     // INPUT HANDLERS
@@ -1018,13 +1023,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gameState !== STATES.PLAYING || !player) return;
         sound.init();
         isDragging = true;
-        keys.fire = true;
-
-        const coords = getCanvasCoords(clientX, clientY);
-        dragStartX = coords.x;
-        dragStartY = coords.y;
+        dragStartX = getCanvasCoords(clientX, clientY).x;
+        dragStartY = getCanvasCoords(clientX, clientY).y;
         playerStartX = player.x;
         playerStartY = player.y;
+        keys.fire = true;
     }
 
     function handlePointerMove(clientX, clientY) {
@@ -1077,10 +1080,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     startGameBtn.addEventListener('click', () => { sound.init(); startNewGame(); });
     playAgainBtn.addEventListener('click', () => { sound.init(); startNewGame(); });
+    vicPlayAgainBtn.addEventListener('click', () => { sound.init(); startNewGame(); });
     backToMenuBtn.addEventListener('click', () => {
-        sound.init(); gameState = STATES.MENU;
+        sound.init();
+        gameState = STATES.MENU;
         gameOverScreen.classList.add('hidden');
+        victoryScreen.classList.add('hidden');
         mainMenuScreen.classList.remove('hidden');
+        gameHud.classList.add('hidden');
+        menuHighDisplay.textContent = String(highScore).padStart(6, '0');
+    });
+    vicBackToMenuBtn.addEventListener('click', () => {
+        sound.init();
+        gameState = STATES.MENU;
+        gameOverScreen.classList.add('hidden');
+        victoryScreen.classList.add('hidden');
+        mainMenuScreen.classList.remove('hidden');
+        gameHud.classList.add('hidden');
         menuHighDisplay.textContent = String(highScore).padStart(6, '0');
     });
 

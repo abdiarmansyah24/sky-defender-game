@@ -151,6 +151,45 @@
             </div>
         </div>
 
+        <!-- VICTORY OVERLAY -->
+        <div id="victoryScreen" class="overlay-screen result-screen hidden">
+            <div class="result-card victory-card">
+                <div class="victory-trophy">🏆</div>
+                <div class="result-header">
+                    <h2 class="victory-title">VICTORY!</h2>
+                    <p class="victory-sub">MISSION ACCOMPLISHED — SKY SAVED!</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <span class="stat-lbl">FINAL SCORE</span>
+                        <span id="vicFinalScoreVal" class="stat-val highlight-gold">000000</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-lbl">HIGH SCORE</span>
+                        <span id="vicFinalHighScoreVal" class="stat-val highlight-cyan">000000</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-lbl">WAVES CLEARED</span>
+                        <span id="vicFinalWaveVal" class="stat-val highlight-gold">5 / 5</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-lbl">ENEMIES DESTROYED</span>
+                        <span id="vicFinalEnemiesVal" class="stat-val">0</span>
+                    </div>
+                </div>
+
+                <div class="result-actions">
+                    <button id="vicPlayAgainBtn" class="cyber-btn primary-btn victory-btn">
+                        <span class="btn-icon">↻</span> PLAY AGAIN
+                    </button>
+                    <button id="vicBackToMenuBtn" class="cyber-btn secondary-btn">
+                        <span class="btn-icon">⌂</span> MAIN MENU
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- HOW TO PLAY MODAL -->
         <div id="howToPlayModal" class="modal-overlay hidden">
             <div class="modal-card">
