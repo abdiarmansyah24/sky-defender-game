@@ -230,6 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let enemiesDestroyed = 0;
     let comboCount = 0;
     let comboTimer = 0;
+    let bossDefeatedThisWave = false;
 
     let screenShakeTime = 0;
     let screenShakeIntensity = 0;
@@ -791,6 +792,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function onBossDefeated() {
+        bossDefeatedThisWave = true;
         enemiesDestroyed++;
         score += 2500 * wave;
         createExplosion(boss.x, boss.y, 70, '#facc15');
@@ -838,7 +840,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let spawnTimer = 0;
 
     function startNewGame() {
-        score = 0; wave = 1; enemiesDestroyed = 0; comboCount = 0;
+        score = 0; wave = 1; enemiesDestroyed = 0; comboCount = 0; bossDefeatedThisWave = false;
         bullets = []; enemyBullets = []; enemies = []; boss = null; powerups = []; particles = []; floatingTexts = [];
 
         player = new Player();
@@ -852,6 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupWave(w) {
+        bossDefeatedThisWave = false;
         hudWaveBadge.textContent = `WAVE ${String(w).padStart(2, '0')}`;
         waveAnnouncementTitle.textContent = `WAVE ${String(w).padStart(2, '0')}`;
         waveTransitionOverlay.classList.remove('hidden');
@@ -882,7 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function checkWaveProgress() {
-        if (wave % 4 === 0 && !boss && enemiesToSpawn.length === 0 && enemies.length === 0) {
+        if (wave % 4 === 0 && !boss && !bossDefeatedThisWave && enemiesToSpawn.length === 0 && enemies.length === 0) {
             spawnBoss();
             return;
         }
