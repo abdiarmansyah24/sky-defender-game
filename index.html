@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#030712">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>SKY DEFENDER — Neon Space Battle</title>
+    <meta name="description" content="Game arcade top-down shooter futuristik SKY DEFENDER. Bertahan hidup, lawan gelombang musuh dan Boss raksasa!">
+    
+    <!-- Google Fonts: Orbitron & Rajdhani -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="gameContainer" class="game-container">
+        <!-- HTML5 Canvas rendering space battle -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Futuristic Glassmorphism HUD -->
+        <header id="gameHud" class="game-hud hidden">
+            <!-- Left Info Cluster -->
+            <div class="hud-box hud-left">
+                <div class="hud-metric">
+                    <span class="hud-label">SCORE</span>
+                    <span id="hudScore" class="hud-value score-val">000000</span>
+                </div>
+                <div class="hud-metric">
+                    <span class="hud-label">HIGH SCORE</span>
+                    <span id="hudHighScore" class="hud-value highscore-val">000000</span>
+                </div>
+            </div>
+
+            <!-- Center Info Cluster -->
+            <div class="hud-box hud-center">
+                <div id="hudWaveBadge" class="hud-wave-badge">WAVE 01</div>
+                <div id="hudComboTag" class="hud-combo-tag hidden">COMBO <span id="comboMultiplier">x1</span></div>
+            </div>
+
+            <!-- Right Info Cluster -->
+            <div class="hud-box hud-right">
+                <div class="hud-metric hp-metric">
+                    <span class="hud-label">SHIELD / HP</span>
+                    <div class="hp-bar-container">
+                        <div id="hpBarFill" class="hp-bar-fill" style="width: 100%;"></div>
+                    </div>
+                </div>
+                <div id="activePowerups" class="active-powerups-list"></div>
+                <button id="soundToggleBtn" class="hud-icon-btn" title="Mute/Unmute Audio">🔊</button>
+            </div>
+        </header>
+
+        <!-- Boss Health Bar Overlay (Top Center during Boss fight) -->
+        <div id="bossHpContainer" class="boss-hp-container hidden">
+            <div class="boss-hp-header">
+                <span class="boss-name-tag">⚠️ NEON DREADNOUGHT (BOSS)</span>
+                <span id="bossHpPct" class="boss-hp-pct">100%</span>
+            </div>
+            <div class="boss-hp-track">
+                <div id="bossHpFill" class="boss-hp-fill" style="width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- MAIN MENU OVERLAY -->
+        <div id="mainMenuScreen" class="overlay-screen menu-screen">
+            <div class="menu-hero-card">
+                <div class="cyber-emblem">⚡</div>
+                <h1 class="game-title">
+                    <span class="title-sky">SKY</span>
+                    <span class="title-defender">DEFENDER</span>
+                </h1>
+                <p class="game-subtitle">NEON SPACE BATTLE</p>
+
+                <div class="menu-actions">
+                    <button id="startGameBtn" class="cyber-btn primary-btn">
+                        <span class="btn-icon">▶</span> START GAME
+                    </button>
+                    <button id="howToPlayBtn" class="cyber-btn secondary-btn">
+                        <span class="btn-icon">⚙</span> HOW TO PLAY
+                    </button>
+                    <button id="highScoreBtn" class="cyber-btn secondary-btn">
+                        <span class="btn-icon">🏆</span> HIGH SCORE
+                    </button>
+                </div>
+
+                <div class="menu-footer">
+                    <span>ARCADE TOP-DOWN SHOOTER</span>
+                    <span>• HITORICAL HIGH: <strong id="menuHighDisplay">000000</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOSS WARNING OVERLAY -->
+        <div id="bossWarningOverlay" class="banner-overlay warning-overlay hidden">
+            <div class="warning-box">
+                <div class="warning-siren">⚠️</div>
+                <h2 class="warning-text">BOSS INCOMING</h2>
+                <p class="warning-sub">PERSIAPKAN DIRI KAMU!</p>
+            </div>
+        </div>
+
+        <!-- WAVE TRANSITION OVERLAY -->
+        <div id="waveTransitionOverlay" class="banner-overlay wave-overlay hidden">
+            <div class="wave-box">
+                <h2 id="waveAnnouncementTitle" class="wave-title">WAVE 01</h2>
+                <p class="wave-sub">GET READY FOR BATTLE!</p>
+            </div>
+        </div>
+
+        <!-- GAME OVER OVERLAY -->
+        <div id="gameOverScreen" class="overlay-screen result-screen hidden">
+            <div class="result-card">
+                <div class="result-header">
+                    <h2 class="gameover-title">GAME OVER</h2>
+                    <p class="gameover-sub">MISSION FAILED</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <span class="stat-lbl">FINAL SCORE</span>
+                        <span id="finalScoreVal" class="stat-val highlight-gold">000000</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-lbl">HIGH SCORE</span>
+                        <span id="finalHighScoreVal" class="stat-val highlight-cyan">000000</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-lbl">WAVE REACHED</span>
+                        <span id="finalWaveVal" class="stat-val">WAVE 01</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-lbl">ENEMIES DESTROYED</span>
+                        <span id="finalEnemiesVal" class="stat-val">0</span>
+                    </div>
+                </div>
+
+                <div class="result-actions">
+                    <button id="playAgainBtn" class="cyber-btn primary-btn">
+                        <span class="btn-icon">↻</span> PLAY AGAIN
+                    </button>
+                    <button id="backToMenuBtn" class="cyber-btn secondary-btn">
+                        <span class="btn-icon">⌂</span> MAIN MENU
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- HOW TO PLAY MODAL -->
+        <div id="howToPlayModal" class="modal-overlay hidden">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3>⚙ HOW TO PLAY</h3>
+                    <button id="closeHowToBtn" class="modal-close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="guide-section">
+                        <h4>🕹️ KONTROL</h4>
+                        <p><strong>Desktop:</strong> Tombol <code>WASD</code> / <code>Panah</code> untuk bergerak. Tombol <code>SPACE</code> untuk menembak.</p>
+                        <p><strong>HP / Tablet:</strong> Gunakan Virtual D-Pad (▲ ◀ ▶ ▼) di kiri & tombol FIRE di kanan, atau geser langsung di layar.</p>
+                    </div>
+
+                    <div class="guide-section">
+                        <h4>👾 TIPE MUSUH</h4>
+                        <ul>
+                            <li><strong style="color: #00f0ff;">Scout:</strong> Kecil, sangat cepat, HP rendah.</li>
+                            <li><strong style="color: #a855f7;">Fighter:</strong> Sedang, menembakkan laser ke arah pemain.</li>
+                            <li><strong style="color: #ef4444;">Tank:</strong> Raksasa, lambat, tembakan menyebar, HP tinggi.</li>
+                            <li><strong style="color: #facc15;">BOSS:</strong> Muncul di Wave tertentu dengan serangan proyektil mematikan!</li>
+                        </ul>
+                    </div>
+
+                    <div class="guide-section">
+                        <h4>⚡ POWER-UP</h4>
+                        <div class="powerup-chips-grid">
+                            <span class="chip chip-rapid">⚡ Rapid Fire</span>
+                            <span class="chip chip-shield">🛡️ Shield</span>
+                            <span class="chip chip-double">💥 Double Laser</span>
+                            <span class="chip chip-health">❤️ Health Restore</span>
+                            <span class="chip chip-boost">⭐ Score Boost</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HIGH SCORE MODAL -->
+        <div id="highScoreModal" class="modal-overlay hidden">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3>🏆 HIGH SCORE</h3>
+                    <button id="closeHighScoreBtn" class="modal-close-btn">&times;</button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="trophy-big">🏆</div>
+                    <p class="hs-label">REKOR TERTINGGI KAMU</p>
+                    <div id="modalHighScoreVal" class="hs-number-big">000000</div>
+                    <button id="resetScoreBtn" class="btn-danger-pill">🗑️ Reset Rekor</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOUCH CONTROLS OVERLAY (For Mobile / Tablet) -->
+        <div id="touchControls" class="touch-controls">
+            <!-- Left D-Pad -->
+            <div class="dpad-container">
+                <button id="btnUp" class="dpad-btn btn-up" aria-label="Move Up">▲</button>
+                <div class="dpad-middle-row">
+                    <button id="btnLeft" class="dpad-btn btn-left" aria-label="Move Left">◀</button>
+                    <div class="dpad-center-stub"></div>
+                    <button id="btnRight" class="dpad-btn btn-right" aria-label="Move Right">▶</button>
+                </div>
+                <button id="btnDown" class="dpad-btn btn-down" aria-label="Move Down">▼</button>
+            </div>
+
+            <!-- Right Fire Button -->
+            <div class="fire-container">
+                <button id="fireBtn" class="fire-btn">FIRE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Script -->
+    <script src="script.js"></script>
+</body>
+</html>
