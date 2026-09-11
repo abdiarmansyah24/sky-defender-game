@@ -231,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let comboCount = 0;
     let comboTimer = 0;
     let bossDefeatedThisWave = false;
+    let bossSpawning = false;
 
     let screenShakeTime = 0;
     let screenShakeIntensity = 0;
@@ -840,7 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let spawnTimer = 0;
 
     function startNewGame() {
-        score = 0; wave = 1; enemiesDestroyed = 0; comboCount = 0; bossDefeatedThisWave = false;
+        score = 0; wave = 1; enemiesDestroyed = 0; comboCount = 0; bossDefeatedThisWave = false; bossSpawning = false;
         bullets = []; enemyBullets = []; enemies = []; boss = null; powerups = []; particles = []; floatingTexts = [];
 
         player = new Player();
@@ -855,6 +856,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupWave(w) {
         bossDefeatedThisWave = false;
+        bossSpawning = false;
         hudWaveBadge.textContent = `WAVE ${String(w).padStart(2, '0')}`;
         waveAnnouncementTitle.textContent = `WAVE ${String(w).padStart(2, '0')}`;
         waveTransitionOverlay.classList.remove('hidden');
@@ -885,12 +887,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function checkWaveProgress() {
-        if (wave % 4 === 0 && !boss && !bossDefeatedThisWave && enemiesToSpawn.length === 0 && enemies.length === 0) {
+        if (wave % 4 === 0 && !boss && !bossSpawning && !bossDefeatedThisWave && enemiesToSpawn.length === 0 && enemies.length === 0) {
             spawnBoss();
             return;
         }
 
-        if (enemiesToSpawn.length > 0 && !boss) {
+        if (enemiesToSpawn.length > 0 && !boss && !bossSpawning) {
             spawnTimer++;
             if (spawnTimer > 45) {
                 spawnTimer = 0;
@@ -899,18 +901,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (enemiesToSpawn.length === 0 && enemies.length === 0 && !boss && gameState === STATES.PLAYING) {
+        if (enemiesToSpawn.length === 0 && enemies.length === 0 && !boss && !bossSpawning && gameState === STATES.PLAYING) {
             advanceWave();
         }
     }
 
     function spawnBoss() {
+        bossSpawning = true;
         sound.playBossWarning();
         bossWarningOverlay.classList.remove('hidden');
 
         setTimeout(() => {
             bossWarningOverlay.classList.add('hidden');
             boss = new Boss();
+            bossSpawning = false;
             bossHpContainer.classList.remove('hidden');
             updateBossHpBar();
         }, 2000);
