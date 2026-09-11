@@ -30,6 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Overlays & Modals
     const mainMenuScreen = document.getElementById('mainMenuScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultSub = document.getElementById('resultSub');
     const bossWarningOverlay = document.getElementById('bossWarningOverlay');
     const waveTransitionOverlay = document.getElementById('waveTransitionOverlay');
     const waveAnnouncementTitle = document.getElementById('waveAnnouncementTitle');
@@ -868,7 +870,13 @@ document.addEventListener('DOMContentLoaded', () => {
         enemiesToSpawn.sort(() => Math.random() - 0.5);
     }
 
+    const MAX_WAVES = 5;
+
     function advanceWave() {
+        if (wave >= MAX_WAVES) {
+            triggerVictory();
+            return;
+        }
         wave++;
         setupWave(wave);
     }
@@ -918,6 +926,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         gameHud.classList.add('hidden');
         bossHpContainer.classList.add('hidden');
+
+        resultTitle.textContent = "GAME OVER";
+        resultTitle.className = "gameover-title";
+        resultSub.textContent = "MISSION FAILED";
+        resultSub.className = "gameover-sub";
+
+        finalScoreVal.textContent = String(score).padStart(6, '0');
+        finalHighScoreVal.textContent = String(highScore).padStart(6, '0');
+        finalWaveVal.textContent = `WAVE ${String(wave).padStart(2, '0')}`;
+        finalEnemiesVal.textContent = String(enemiesDestroyed);
+
+        gameOverScreen.classList.remove('hidden');
+    }
+
+    function triggerVictory() {
+        gameState = STATES.GAME_OVER;
+        sound.playPowerUp();
+
+        gameHud.classList.add('hidden');
+        bossHpContainer.classList.add('hidden');
+
+        resultTitle.textContent = "VICTORY!";
+        resultTitle.className = "victory-title";
+        resultSub.textContent = "MISSION ACCOMPLISHED — SKY SAVED!";
+        resultSub.className = "gameover-sub victory-sub";
 
         finalScoreVal.textContent = String(score).padStart(6, '0');
         finalHighScoreVal.textContent = String(highScore).padStart(6, '0');

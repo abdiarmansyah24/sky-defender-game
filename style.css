@@ -515,6 +515,15 @@ body {
     text-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
 }
 
+.victory-title {
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #facc15;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(250, 204, 21, 0.8), 0 0 35px rgba(0, 240, 255, 0.5);
+}
+
 .gameover-sub {
     font-family: var(--font-heading);
     font-size: 0.8rem;
@@ -522,6 +531,11 @@ body {
     color: #94a3b8;
     margin-top: 2px;
     margin-bottom: 20px;
+}
+
+.victory-sub {
+    color: #38bdf8;
+    text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
 }
 
 .stats-grid {
