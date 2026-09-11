@@ -803,16 +803,15 @@ document.addEventListener('DOMContentLoaded', () => {
         bossDefeatedThisWave = true;
         enemiesDestroyed++;
         score += 2500 * wave;
+        updateHud();
         createExplosion(boss.x, boss.y, 70, '#facc15');
         floatingTexts.push(new FloatingText(boss.x, boss.y, `+${2500 * wave} BOSS DEFEATED!`, '#facc15'));
-
-        spawnPowerUp(boss.x - 30, boss.y);
-        spawnPowerUp(boss.x + 30, boss.y);
 
         boss = null;
         bossHpContainer.classList.add('hidden');
 
-        setTimeout(() => advanceWave(), 2000);
+        // Langsung tampilkan Layar Kemenangan (Victory Screen) setelah Boss hancur
+        setTimeout(() => triggerVictory(), 1500);
     }
 
     function updateHud() {
@@ -977,7 +976,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         vicFinalScoreVal.textContent = String(score).padStart(6, '0');
         vicFinalHighScoreVal.textContent = String(highScore).padStart(6, '0');
-        vicFinalWaveVal.textContent = `5 / 5`;
+        vicFinalWaveVal.textContent = `WAVE ${String(wave).padStart(2, '0')}`;
         vicFinalEnemiesVal.textContent = String(enemiesDestroyed);
 
         gameOverScreen.classList.add('hidden');
