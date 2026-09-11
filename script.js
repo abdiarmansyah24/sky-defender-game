@@ -895,8 +895,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function checkWaveProgress() {
-        if (wave % 4 === 0 && !boss && !bossSpawning && !bossDefeatedThisWave && enemiesToSpawn.length === 0 && enemies.length === 0) {
-            spawnBoss();
+        if (wave % 4 === 0) {
+            if (!boss && !bossSpawning && !bossDefeatedThisWave && enemiesToSpawn.length === 0 && enemies.length === 0) {
+                spawnBoss();
+                return;
+            }
+            if (enemiesToSpawn.length > 0 && !boss && !bossSpawning) {
+                spawnTimer++;
+                if (spawnTimer > 45) {
+                    spawnTimer = 0;
+                    const type = enemiesToSpawn.pop();
+                    enemies.push(new Enemy(type));
+                }
+            }
+            // For Boss wave, wave advancement is handled strictly by onBossDefeated() timeout
             return;
         }
 
