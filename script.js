@@ -246,6 +246,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 osc.stop(now + 0.6);
             } catch (e) {}
         }
+
+        playVictory() {
+            if (this.muted || !this.ctx) return;
+            try {
+                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                const now = this.ctx.currentTime;
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+                    gain.gain.setValueAtTime(0.25, now + idx * 0.09);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.4);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.09);
+                    osc.stop(now + idx * 0.09 + 0.4);
+                });
+            } catch (e) {}
+        }
     }
 
     const sound = new SoundEngine();
@@ -257,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // GAME ENGINE STATE VARIABLES
-    const STATES = { MENU: 0, PLAYING: 1, WAVE_TRANSITION: 2, GAME_OVER: 3, PAUSED: 4 };
+    const STATES = { MENU: 0, PLAYING: 1, WAVE_TRANSITION: 2, GAME_OVER: 3, PAUSED: 4, VICTORY: 5 };
     let gameState = STATES.MENU;
 
     let score = 0;
@@ -280,6 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let powerups = [];
     let particles = [];
     let floatingTexts = [];
+    let confetti = [];
     let stars = [];
 
     const keys = { up: false, down: false, left: false, right: false, fire: false };
@@ -598,6 +619,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.targetY = 110;
             this.maxHp = 1000 + wave * 350;
             this.hp = this.maxHp;
+            this.isDead = false;
             this.speedX = 3;
             this.lastAttack = Date.now();
             this.attackPattern = 0;
@@ -677,14 +699,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         takeDamage(amount) {
+            if (this.isDead) return;
             this.hp -= amount;
             sound.playHit();
             triggerScreenShake(4, 100);
 
             if (this.hp <= 0) {
                 this.hp = 0;
+                this.isDead = true;
                 onBossDefeated();
             }
+        }
+    }
+
+    // CONFETTI PARTICLE CLASS
+    class ConfettiParticle {
+        constructor() {
+            this.x = Math.random() * width;
+            this.y = -20;
+            this.vx = (Math.random() - 0.5) * 4;
+            this.vy = Math.random() * 3 + 2;
+            this.size = Math.random() * 8 + 4;
+            this.color = ['#facc15', '#00f0ff', '#a855f7', '#ef4444', '#22c55e', '#ec4899'][Math.floor(Math.random() * 6)];
+            this.rotation = Math.random() * Math.PI * 2;
+            this.vRot = (Math.random() - 0.5) * 0.2;
+            this.markedForDeletion = false;
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.rotation += this.vRot;
+            if (this.y > height + 20) this.markedForDeletion = true;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+            ctx.fillStyle = this.color;
+            ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+            ctx.restore();
         }
     }
 
@@ -894,6 +949,11 @@ document.addEventListener('DOMContentLoaded', () => {
         boss = null;
         bossHpContainer.classList.add('hidden');
         enemyBullets = [];
+        enemies = [];
+        enemiesToSpawn = [];
+        if (player) {
+            player.shieldTimer = 10000;
+        }
 
         clearPendingTimers();
         victoryTimerId = setTimeout(() => {
@@ -939,7 +999,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clearPendingTimers();
         score = 0; wave = 1; enemiesDestroyed = 0; comboCount = 0; bossDefeatedThisWave = false; bossSpawning = false;
         nukeCount = 1; updateNukeUI();
-        bullets = []; enemyBullets = []; enemies = []; boss = null; powerups = []; particles = []; floatingTexts = [];
+        bullets = []; enemyBullets = []; enemies = []; boss = null; powerups = []; particles = []; floatingTexts = []; confetti = [];
 
         player = new Player();
         gameState = STATES.PLAYING;
@@ -1065,11 +1125,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function triggerVictory() {
-        gameState = STATES.GAME_OVER;
-        sound.playPowerUp();
+        clearPendingTimers();
+        gameState = STATES.VICTORY;
+        sound.playVictory();
 
         gameHud.classList.add('hidden');
         bossHpContainer.classList.add('hidden');
+
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('sky_defender_highscore', highScore);
+        }
 
         vicFinalScoreVal.textContent = String(score).padStart(6, '0');
         vicFinalHighScoreVal.textContent = String(highScore).padStart(6, '0');
@@ -1078,6 +1144,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         gameOverScreen.classList.add('hidden');
         victoryScreen.classList.remove('hidden');
+
+        for (let i = 0; i < 90; i++) {
+            confetti.push(new ConfettiParticle());
+        }
     }
 
     function triggerNuke() {
@@ -1251,6 +1321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pauseMenuBtn.addEventListener('click', () => {
         sound.init();
         clearPendingTimers();
+        confetti = [];
         gameState = STATES.MENU;
         pauseScreen.classList.add('hidden');
         gameOverScreen.classList.add('hidden');
@@ -1262,6 +1333,7 @@ document.addEventListener('DOMContentLoaded', () => {
     backToMenuBtn.addEventListener('click', () => {
         sound.init();
         clearPendingTimers();
+        confetti = [];
         gameState = STATES.MENU;
         gameOverScreen.classList.add('hidden');
         victoryScreen.classList.add('hidden');
@@ -1272,6 +1344,7 @@ document.addEventListener('DOMContentLoaded', () => {
     vicBackToMenuBtn.addEventListener('click', () => {
         sound.init();
         clearPendingTimers();
+        confetti = [];
         gameState = STATES.MENU;
         gameOverScreen.classList.add('hidden');
         victoryScreen.classList.add('hidden');
@@ -1347,7 +1420,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         ctx.globalAlpha = 1;
 
-        if (gameState === STATES.PLAYING || gameState === STATES.PAUSED) {
+        if (gameState === STATES.PLAYING || gameState === STATES.PAUSED || gameState === STATES.VICTORY) {
             const isPlaying = (gameState === STATES.PLAYING);
             if (isPlaying) checkWaveProgress();
 
@@ -1412,7 +1485,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (isPlaying) {
                     bullets.forEach(bullet => {
-                        if (!bullet.markedForDeletion) {
+                        if (boss && !bullet.markedForDeletion) {
                             const dist = Math.hypot(bullet.x - boss.x, bullet.y - boss.y);
                             if (dist < boss.width / 2 + bullet.radius) {
                                 bullet.markedForDeletion = true;
@@ -1421,7 +1494,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
 
-                    if (player) {
+                    if (boss && player) {
                         const dist = Math.hypot(boss.x - player.x, boss.y - player.y);
                         if (dist < (boss.width + player.width) / 2) {
                             player.takeDamage(40);
@@ -1454,13 +1527,22 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             particles.forEach(p => {
-                if (isPlaying) p.update();
+                if (isPlaying || gameState === STATES.VICTORY) p.update();
                 p.draw();
             });
 
             floatingTexts.forEach(ft => {
-                if (isPlaying) ft.update();
+                if (isPlaying || gameState === STATES.VICTORY) ft.update();
                 ft.draw();
+            });
+
+            if (gameState === STATES.VICTORY) {
+                if (Math.random() < 0.35) confetti.push(new ConfettiParticle());
+            }
+
+            confetti.forEach(c => {
+                c.update();
+                c.draw();
             });
 
             if (isPlaying) {
@@ -1471,6 +1553,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 particles = particles.filter(p => !p.markedForDeletion);
                 floatingTexts = floatingTexts.filter(ft => !ft.markedForDeletion);
             }
+            confetti = confetti.filter(c => !c.markedForDeletion);
         }
 
         ctx.restore();
