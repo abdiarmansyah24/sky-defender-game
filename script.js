@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const hpBarFill = document.getElementById('hpBarFill');
     const activePowerupsList = document.getElementById('activePowerups');
     const soundToggleBtn = document.getElementById('soundToggleBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
 
     // Boss HUD
     const bossHpContainer = document.getElementById('bossHpContainer');
@@ -31,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainMenuScreen = document.getElementById('mainMenuScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const victoryScreen = document.getElementById('victoryScreen');
+    const pauseScreen = document.getElementById('pauseScreen');
     const resultTitle = document.getElementById('resultTitle');
     const resultSub = document.getElementById('resultSub');
     const bossWarningOverlay = document.getElementById('bossWarningOverlay');
@@ -41,6 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Buttons
     const startGameBtn = document.getElementById('startGameBtn');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const pauseRestartBtn = document.getElementById('pauseRestartBtn');
+    const pauseMenuBtn = document.getElementById('pauseMenuBtn');
     const howToPlayBtn = document.getElementById('howToPlayBtn');
     const highScoreBtn = document.getElementById('highScoreBtn');
     const closeHowToBtn = document.getElementById('closeHowToBtn');
@@ -70,6 +75,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRight = document.getElementById('btnRight');
     const fireBtn = document.getElementById('fireBtn');
 
+    // Nuke Elements
+    const nukeBtn = document.getElementById('nukeBtn');
+    const nukeCountVal = document.getElementById('nukeCount');
+    const mobileNukeBtn = document.getElementById('mobileNukeBtn');
+    let nukeCount = 1;
+
     // Canvas Sizing
     let width = 0;
     let height = 0;
@@ -98,6 +109,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (this.ctx && this.ctx.state === 'suspended') {
                 this.ctx.resume();
             }
+        }
+
+        playNuke() {
+            if (this.muted || !this.ctx) return;
+            try {
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.exponentialRampToValueAtTime(30, now + 0.5);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.5);
+            } catch (e) {}
         }
 
         playLaser() {
@@ -228,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // GAME ENGINE STATE VARIABLES
-    const STATES = { MENU: 0, PLAYING: 1, WAVE_TRANSITION: 2, GAME_OVER: 3 };
+    const STATES = { MENU: 0, PLAYING: 1, WAVE_TRANSITION: 2, GAME_OVER: 3, PAUSED: 4 };
     let gameState = STATES.MENU;
 
     let score = 0;
@@ -255,6 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const keys = { up: false, down: false, left: false, right: false, fire: false };
 
+    let nebulae = [];
     function initStarfield() {
         stars = [];
         for (let i = 0; i < 70; i++) {
@@ -266,6 +296,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 opacity: Math.random() * 0.8 + 0.2
             });
         }
+
+        nebulae = [
+            { x: width * 0.2, y: height * 0.3, radius: 180, color: 'rgba(168, 85, 247, 0.12)', vy: 0.3 },
+            { x: width * 0.8, y: height * 0.7, radius: 220, color: 'rgba(0, 240, 255, 0.1)', vy: 0.2 },
+            { x: width * 0.5, y: -100, radius: 200, color: 'rgba(59, 130, 246, 0.12)', vy: 0.25 }
+        ];
     }
     initStarfield();
 
@@ -285,6 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.doubleLaserTimer = 0;
             this.scoreBoostTimer = 0;
 
+            this.tiltAngle = 0;
             this.lastShootTime = 0;
             this.shootInterval = 180;
         }
@@ -297,6 +334,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (keys.down) dy += 1;
 
             if (dx !== 0 && dy !== 0) { dx *= 0.7071; dy *= 0.7071; }
+
+            const targetTilt = dx * 0.22;
+            this.tiltAngle += (targetTilt - this.tiltAngle) * 0.2;
 
             this.x += dx * this.speed;
             this.y += dy * this.speed;
@@ -342,6 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
         draw() {
             ctx.save();
             ctx.translate(this.x, this.y);
+            ctx.rotate(this.tiltAngle);
 
             if (this.shieldTimer > 0) {
                 ctx.beginPath();
@@ -565,17 +606,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         update() {
             if (this.y < this.targetY) {
-                this.y += 1.5;
-                return;
-            }
-
-            this.x += this.speedX;
-            if (this.x < this.width / 2 + 20 || this.x > width - this.width / 2 - 20) {
-                this.speedX *= -1;
+                this.y += 2;
+            } else {
+                this.x += this.speedX;
+                if (this.x < this.width / 2 + 20 || this.x > width - this.width / 2 - 20) {
+                    this.speedX *= -1;
+                }
             }
 
             const now = Date.now();
-            if (now - this.lastAttack > 1600) {
+            if (now - this.lastAttack > 1500) {
                 this.lastAttack = now;
                 this.attackPattern = (this.attackPattern + 1) % 3;
 
@@ -587,8 +627,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const dx = player.x - this.x;
                     const dy = player.y - this.y;
                     const dist = Math.hypot(dx, dy) || 1;
-                    const vx = (dx / dist) * 6;
-                    const vy = (dy / dist) * 6;
+                    const vx = (dx / dist) * 5.5;
+                    const vy = (dy / dist) * 5.5;
                     enemyBullets.push(new Bullet(this.x - 20, this.y + 20, vy, false, vx, '#ef4444'));
                     enemyBullets.push(new Bullet(this.x + 20, this.y + 20, vy, false, vx, '#ef4444'));
                 } else {
@@ -734,6 +774,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    class ShockwaveRing {
+        constructor(x, y, color = '#facc15') {
+            this.x = x;
+            this.y = y;
+            this.radius = 10;
+            this.maxRadius = Math.max(width, height) * 1.2;
+            this.color = color;
+            this.markedForDeletion = false;
+        }
+
+        update() {
+            this.radius += 25;
+            if (this.radius >= this.maxRadius) this.markedForDeletion = true;
+        }
+
+        draw() {
+            const alpha = Math.max(0, 1 - (this.radius / this.maxRadius));
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 12 * alpha;
+            ctx.globalAlpha = alpha;
+            ctx.shadowColor = this.color;
+            ctx.shadowBlur = 20;
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+
     // FLOATING TEXT CLASS
     class FloatingText {
         constructor(x, y, text, color = '#ffffff') {
@@ -799,19 +869,38 @@ document.addEventListener('DOMContentLoaded', () => {
         updateHud();
     }
 
+    let victoryTimerId = null;
+    let bossSpawnTimerId = null;
+
+    function clearPendingTimers() {
+        if (victoryTimerId) { clearTimeout(victoryTimerId); victoryTimerId = null; }
+        if (bossSpawnTimerId) { clearTimeout(bossSpawnTimerId); bossSpawnTimerId = null; }
+    }
+
     function onBossDefeated() {
         bossDefeatedThisWave = true;
         enemiesDestroyed++;
         score += 2500 * wave;
         updateHud();
-        createExplosion(boss.x, boss.y, 70, '#facc15');
-        floatingTexts.push(new FloatingText(boss.x, boss.y, `+${2500 * wave} BOSS DEFEATED!`, '#facc15'));
+
+        const bx = boss ? boss.x : width / 2;
+        const by = boss ? boss.y : 150;
+        createExplosion(bx, by, 70, '#facc15');
+        floatingTexts.push(new FloatingText(bx, by, `+${2500 * wave} BOSS DEFEATED!`, '#facc15'));
+
+        setTimeout(() => createExplosion(bx - 30, by + 20, 50, '#ef4444'), 250);
+        setTimeout(() => createExplosion(bx + 30, by - 20, 50, '#00f0ff'), 500);
 
         boss = null;
         bossHpContainer.classList.add('hidden');
+        enemyBullets = [];
 
-        // Langsung tampilkan Layar Kemenangan (Victory Screen) setelah Boss hancur
-        setTimeout(() => triggerVictory(), 1500);
+        clearPendingTimers();
+        victoryTimerId = setTimeout(() => {
+            if (player && player.hp > 0) {
+                triggerVictory();
+            }
+        }, 1800);
     }
 
     function updateHud() {
@@ -847,7 +936,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let spawnTimer = 0;
 
     function startNewGame() {
+        clearPendingTimers();
         score = 0; wave = 1; enemiesDestroyed = 0; comboCount = 0; bossDefeatedThisWave = false; bossSpawning = false;
+        nukeCount = 1; updateNukeUI();
         bullets = []; enemyBullets = []; enemies = []; boss = null; powerups = []; particles = []; floatingTexts = [];
 
         player = new Player();
@@ -856,6 +947,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mainMenuScreen.classList.add('hidden');
         gameOverScreen.classList.add('hidden');
         victoryScreen.classList.add('hidden');
+        pauseScreen.classList.add('hidden');
         gameHud.classList.remove('hidden');
 
         setupWave(wave);
@@ -864,6 +956,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupWave(w) {
         bossDefeatedThisWave = false;
         bossSpawning = false;
+        if (w > 1 && nukeCount < 3) {
+            nukeCount++;
+            updateNukeUI();
+        }
         hudWaveBadge.textContent = `WAVE ${String(w).padStart(2, '0')}`;
         waveAnnouncementTitle.textContent = `WAVE ${String(w).padStart(2, '0')}`;
         waveTransitionOverlay.classList.remove('hidden');
@@ -885,16 +981,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAX_WAVES = 5;
 
     function advanceWave() {
-        if (wave >= MAX_WAVES) {
-            triggerVictory();
-            return;
+        if (wave < MAX_WAVES) {
+            wave++;
+            setupWave(wave);
         }
-        wave++;
-        setupWave(wave);
     }
 
     function checkWaveProgress() {
-        if (wave % 4 === 0) {
+        if (gameState !== STATES.PLAYING) return;
+
+        if (wave >= MAX_WAVES) {
             if (!boss && !bossSpawning && !bossDefeatedThisWave && enemiesToSpawn.length === 0 && enemies.length === 0) {
                 spawnBoss();
                 return;
@@ -907,7 +1003,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     enemies.push(new Enemy(type));
                 }
             }
-            // For Boss wave, wave advancement is handled strictly by onBossDefeated() timeout
             return;
         }
 
@@ -920,21 +1015,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (enemiesToSpawn.length === 0 && enemies.length === 0 && !boss && !bossSpawning && gameState === STATES.PLAYING) {
+        if (enemiesToSpawn.length === 0 && enemies.length === 0 && !boss && !bossSpawning) {
             advanceWave();
         }
     }
 
     function spawnBoss() {
+        if (boss || bossSpawning) return;
         bossSpawning = true;
         sound.playBossWarning();
         bossWarningOverlay.classList.remove('hidden');
 
-        setTimeout(() => {
+        bossSpawnTimerId = setTimeout(() => {
             bossWarningOverlay.classList.add('hidden');
             boss = new Boss();
             bossSpawning = false;
-            bossHpContainer.classList.remove('hidden');
+            if (bossHpContainer) bossHpContainer.classList.remove('hidden');
             updateBossHpBar();
         }, 2000);
     }
@@ -947,6 +1043,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function triggerGameOver() {
+        clearPendingTimers();
         gameState = STATES.GAME_OVER;
         sound.playGameOver();
 
@@ -976,15 +1073,69 @@ document.addEventListener('DOMContentLoaded', () => {
 
         vicFinalScoreVal.textContent = String(score).padStart(6, '0');
         vicFinalHighScoreVal.textContent = String(highScore).padStart(6, '0');
-        vicFinalWaveVal.textContent = `WAVE ${String(wave).padStart(2, '0')}`;
+        vicFinalWaveVal.textContent = `5 / 5`;
         vicFinalEnemiesVal.textContent = String(enemiesDestroyed);
 
         gameOverScreen.classList.add('hidden');
         victoryScreen.classList.remove('hidden');
     }
 
+    function triggerNuke() {
+        if (gameState !== STATES.PLAYING || nukeCount <= 0) return;
+        sound.playNuke();
+        nukeCount--;
+        updateNukeUI();
+
+        triggerScreenShake(20, 600);
+
+        particles.push(new ShockwaveRing(width / 2, height / 2, '#facc15'));
+        particles.push(new ShockwaveRing(width / 2, height / 2, '#00f0ff'));
+
+        enemyBullets.forEach(b => {
+            particles.push(new Particle(b.x, b.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, 3, '#facc15', 20));
+        });
+        enemyBullets = [];
+
+        enemies.forEach(enemy => {
+            createExplosion(enemy.x, enemy.y, 25, enemy.color);
+            enemy.takeDamage(120);
+        });
+
+        if (boss) {
+            createExplosion(boss.x, boss.y, 45, '#facc15');
+            boss.takeDamage(350);
+        }
+
+        floatingTexts.push(new FloatingText(width / 2, height / 2, '💥 EMP NUKE BLAST! 💥', '#facc15'));
+    }
+
+    function updateNukeUI() {
+        if (nukeCountVal) nukeCountVal.textContent = nukeCount;
+        if (nukeBtn) nukeBtn.classList.toggle('empty', nukeCount <= 0);
+        if (mobileNukeBtn) mobileNukeBtn.classList.toggle('empty', nukeCount <= 0);
+    }
+
+    function togglePause() {
+        if (gameState === STATES.PLAYING) {
+            gameState = STATES.PAUSED;
+            pauseScreen.classList.remove('hidden');
+        } else if (gameState === STATES.PAUSED) {
+            gameState = STATES.PLAYING;
+            pauseScreen.classList.add('hidden');
+        }
+    }
+
     // INPUT HANDLERS
     window.addEventListener('keydown', (e) => {
+        if (e.code === 'KeyB' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+            sound.init();
+            triggerNuke();
+            return;
+        }
+        if (e.code === 'KeyP' || e.code === 'Escape') {
+            togglePause();
+            return;
+        }
         if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.up = true;
         if (e.code === 'KeyS' || e.code === 'ArrowDown') keys.down = true;
         if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = true;
@@ -1092,8 +1243,25 @@ document.addEventListener('DOMContentLoaded', () => {
     startGameBtn.addEventListener('click', () => { sound.init(); startNewGame(); });
     playAgainBtn.addEventListener('click', () => { sound.init(); startNewGame(); });
     vicPlayAgainBtn.addEventListener('click', () => { sound.init(); startNewGame(); });
+    if (nukeBtn) nukeBtn.addEventListener('click', () => { sound.init(); triggerNuke(); });
+    if (mobileNukeBtn) mobileNukeBtn.addEventListener('click', () => { sound.init(); triggerNuke(); });
+    pauseBtn.addEventListener('click', () => { sound.init(); togglePause(); });
+    resumeBtn.addEventListener('click', () => { sound.init(); togglePause(); });
+    pauseRestartBtn.addEventListener('click', () => { sound.init(); pauseScreen.classList.add('hidden'); startNewGame(); });
+    pauseMenuBtn.addEventListener('click', () => {
+        sound.init();
+        clearPendingTimers();
+        gameState = STATES.MENU;
+        pauseScreen.classList.add('hidden');
+        gameOverScreen.classList.add('hidden');
+        victoryScreen.classList.add('hidden');
+        mainMenuScreen.classList.remove('hidden');
+        gameHud.classList.add('hidden');
+        menuHighDisplay.textContent = String(highScore).padStart(6, '0');
+    });
     backToMenuBtn.addEventListener('click', () => {
         sound.init();
+        clearPendingTimers();
         gameState = STATES.MENU;
         gameOverScreen.classList.add('hidden');
         victoryScreen.classList.add('hidden');
@@ -1103,6 +1271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     vicBackToMenuBtn.addEventListener('click', () => {
         sound.init();
+        clearPendingTimers();
         gameState = STATES.MENU;
         gameOverScreen.classList.add('hidden');
         victoryScreen.classList.add('hidden');
@@ -1155,6 +1324,20 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.translate(dx, dy);
         }
 
+        nebulae.forEach(n => {
+            n.y += n.vy;
+            if (n.y - n.radius > height) n.y = -n.radius;
+            const grad = ctx.createRadialGradient(n.x, n.y, 10, n.x, n.y, n.radius);
+            grad.addColorStop(0, n.color);
+            grad.addColorStop(1, 'transparent');
+            ctx.save();
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+
         ctx.fillStyle = '#ffffff';
         stars.forEach(star => {
             star.y += star.speed;
@@ -1164,78 +1347,96 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         ctx.globalAlpha = 1;
 
-        if (gameState === STATES.PLAYING) {
-            checkWaveProgress();
+        if (gameState === STATES.PLAYING || gameState === STATES.PAUSED) {
+            const isPlaying = (gameState === STATES.PLAYING);
+            if (isPlaying) checkWaveProgress();
 
             if (player) {
-                player.update(dt);
+                if (isPlaying) player.update(dt);
                 player.draw();
             }
 
-            bullets.forEach(bullet => { bullet.update(); bullet.draw(); });
+            bullets.forEach(bullet => {
+                if (isPlaying) bullet.update();
+                bullet.draw();
+            });
 
             enemyBullets.forEach(bullet => {
-                bullet.update(); bullet.draw();
-                if (player && !bullet.markedForDeletion) {
-                    const dist = Math.hypot(bullet.x - player.x, bullet.y - player.y);
-                    if (dist < player.width / 2 + bullet.radius) {
-                        bullet.markedForDeletion = true;
-                        player.takeDamage(12);
-                        updateHud();
-                        if (player.hp <= 0) triggerGameOver();
+                if (isPlaying) {
+                    bullet.update();
+                    if (player && !bullet.markedForDeletion) {
+                        const dist = Math.hypot(bullet.x - player.x, bullet.y - player.y);
+                        if (dist < player.width / 2 + bullet.radius) {
+                            bullet.markedForDeletion = true;
+                            player.takeDamage(12);
+                            updateHud();
+                            if (player.hp <= 0) triggerGameOver();
+                        }
                     }
                 }
+                bullet.draw();
             });
 
             enemies.forEach(enemy => {
-                enemy.update(); enemy.draw();
-                if (player && !enemy.markedForDeletion) {
-                    const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
-                    if (dist < (enemy.width + player.width) / 2.2) {
-                        enemy.markedForDeletion = true;
-                        player.takeDamage(25);
-                        createExplosion(enemy.x, enemy.y, 20, enemy.color);
-                        updateHud();
-                        if (player.hp <= 0) triggerGameOver();
-                    }
-                }
+                if (isPlaying) enemy.update();
+                enemy.draw();
 
-                bullets.forEach(bullet => {
-                    if (!bullet.markedForDeletion && !enemy.markedForDeletion) {
-                        const dist = Math.hypot(bullet.x - enemy.x, bullet.y - enemy.y);
-                        if (dist < enemy.width / 2 + bullet.radius) {
-                            bullet.markedForDeletion = true;
-                            enemy.takeDamage(25);
+                if (isPlaying) {
+                    if (player && !enemy.markedForDeletion) {
+                        const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+                        if (dist < (enemy.width + player.width) / 2.2) {
+                            enemy.markedForDeletion = true;
+                            player.takeDamage(25);
+                            createExplosion(enemy.x, enemy.y, 20, enemy.color);
+                            updateHud();
+                            if (player.hp <= 0) triggerGameOver();
                         }
                     }
-                });
+
+                    bullets.forEach(bullet => {
+                        if (!bullet.markedForDeletion && !enemy.markedForDeletion) {
+                            const dist = Math.hypot(bullet.x - enemy.x, bullet.y - enemy.y);
+                            if (dist < enemy.width / 2 + bullet.radius) {
+                                bullet.markedForDeletion = true;
+                                enemy.takeDamage(25);
+                            }
+                        }
+                    });
+                }
             });
 
             if (boss) {
-                boss.update(); boss.draw(); updateBossHpBar();
-                bullets.forEach(bullet => {
-                    if (!bullet.markedForDeletion) {
-                        const dist = Math.hypot(bullet.x - boss.x, bullet.y - boss.y);
-                        if (dist < boss.width / 2 + bullet.radius) {
-                            bullet.markedForDeletion = true;
-                            boss.takeDamage(25);
-                        }
-                    }
-                });
+                if (isPlaying) boss.update();
+                boss.draw();
+                updateBossHpBar();
 
-                if (player) {
-                    const dist = Math.hypot(boss.x - player.x, boss.y - player.y);
-                    if (dist < (boss.width + player.width) / 2) {
-                        player.takeDamage(40);
-                        updateHud();
-                        if (player.hp <= 0) triggerGameOver();
+                if (isPlaying) {
+                    bullets.forEach(bullet => {
+                        if (!bullet.markedForDeletion) {
+                            const dist = Math.hypot(bullet.x - boss.x, bullet.y - boss.y);
+                            if (dist < boss.width / 2 + bullet.radius) {
+                                bullet.markedForDeletion = true;
+                                boss.takeDamage(25);
+                            }
+                        }
+                    });
+
+                    if (player) {
+                        const dist = Math.hypot(boss.x - player.x, boss.y - player.y);
+                        if (dist < (boss.width + player.width) / 2) {
+                            player.takeDamage(40);
+                            updateHud();
+                            if (player.hp <= 0) triggerGameOver();
+                        }
                     }
                 }
             }
 
             powerups.forEach(pu => {
-                pu.update(); pu.draw();
-                if (player && !pu.markedForDeletion) {
+                if (isPlaying) pu.update();
+                pu.draw();
+
+                if (isPlaying && player && !pu.markedForDeletion) {
                     const dist = Math.hypot(pu.x - player.x, pu.y - player.y);
                     if (dist < player.width / 2 + pu.radius) {
                         pu.markedForDeletion = true;
@@ -1252,15 +1453,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            particles.forEach(p => { p.update(); p.draw(); });
-            floatingTexts.forEach(ft => { ft.update(); ft.draw(); });
+            particles.forEach(p => {
+                if (isPlaying) p.update();
+                p.draw();
+            });
 
-            bullets = bullets.filter(b => !b.markedForDeletion);
-            enemyBullets = enemyBullets.filter(eb => !eb.markedForDeletion);
-            enemies = enemies.filter(e => !e.markedForDeletion);
-            powerups = powerups.filter(p => !p.markedForDeletion);
-            particles = particles.filter(p => !p.markedForDeletion);
-            floatingTexts = floatingTexts.filter(ft => !ft.markedForDeletion);
+            floatingTexts.forEach(ft => {
+                if (isPlaying) ft.update();
+                ft.draw();
+            });
+
+            if (isPlaying) {
+                bullets = bullets.filter(b => !b.markedForDeletion);
+                enemyBullets = enemyBullets.filter(eb => !eb.markedForDeletion);
+                enemies = enemies.filter(e => !e.markedForDeletion);
+                powerups = powerups.filter(p => !p.markedForDeletion);
+                particles = particles.filter(p => !p.markedForDeletion);
+                floatingTexts = floatingTexts.filter(ft => !ft.markedForDeletion);
+            }
         }
 
         ctx.restore();

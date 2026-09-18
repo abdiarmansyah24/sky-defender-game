@@ -41,6 +41,9 @@
             <div class="hud-box hud-center">
                 <div id="hudWaveBadge" class="hud-wave-badge">WAVE 01</div>
                 <div id="hudComboTag" class="hud-combo-tag hidden">COMBO <span id="comboMultiplier">x1</span></div>
+                <button id="nukeBtn" class="nuke-hud-btn" title="Trigger EMP Nuke (Key: B / Shift)">
+                    💣 <span id="nukeCount">1</span>
+                </button>
             </div>
 
             <!-- Right Info Cluster -->
@@ -53,6 +56,7 @@
                 </div>
                 <div id="activePowerups" class="active-powerups-list"></div>
                 <button id="soundToggleBtn" class="hud-icon-btn" title="Mute/Unmute Audio">🔊</button>
+                <button id="pauseBtn" class="hud-icon-btn" title="Pause Game">⏸️</button>
             </div>
         </header>
 
@@ -190,6 +194,27 @@
             </div>
         </div>
 
+        <!-- PAUSE OVERLAY -->
+        <div id="pauseScreen" class="overlay-screen result-screen hidden">
+            <div class="result-card">
+                <div class="result-header">
+                    <h2 class="gameover-title" style="color: #00f0ff; text-shadow: var(--cyan-glow);">GAME PAUSED</h2>
+                    <p class="gameover-sub" style="color: #94a3b8;">SISTEM DIHENTIKAN SEMENTARA</p>
+                </div>
+                <div class="result-actions" style="margin-top: 20px;">
+                    <button id="resumeBtn" class="cyber-btn primary-btn">
+                        <span class="btn-icon">▶</span> RESUME GAME
+                    </button>
+                    <button id="pauseRestartBtn" class="cyber-btn secondary-btn">
+                        <span class="btn-icon">↻</span> RESTART
+                    </button>
+                    <button id="pauseMenuBtn" class="cyber-btn secondary-btn">
+                        <span class="btn-icon">⌂</span> MAIN MENU
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- HOW TO PLAY MODAL -->
         <div id="howToPlayModal" class="modal-overlay hidden">
             <div class="modal-card">
@@ -257,8 +282,9 @@
                 <button id="btnDown" class="dpad-btn btn-down" aria-label="Move Down">▼</button>
             </div>
 
-            <!-- Right Fire Button -->
+            <!-- Right Fire & Nuke Buttons -->
             <div class="fire-container">
+                <button id="mobileNukeBtn" class="mobile-nuke-btn" title="EMP Nuke">💣</button>
                 <button id="fireBtn" class="fire-btn">FIRE</button>
             </div>
         </div>
