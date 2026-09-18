@@ -405,16 +405,38 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.translate(this.x, this.y);
             ctx.rotate(this.tiltAngle);
 
+            const now = Date.now();
+            const thrusterLen = 18 + Math.sin(now * 0.03) * 6;
+            const thrusterGrad = ctx.createLinearGradient(0, this.height / 2, 0, this.height / 2 + thrusterLen);
+            thrusterGrad.addColorStop(0, this.rapidFireTimer > 0 ? '#facc15' : '#00f0ff');
+            thrusterGrad.addColorStop(0.6, '#3b82f6');
+            thrusterGrad.addColorStop(1, 'transparent');
+
+            ctx.beginPath();
+            ctx.moveTo(-8, this.height / 2 - 4);
+            ctx.lineTo(0, this.height / 2 + thrusterLen);
+            ctx.lineTo(8, this.height / 2 - 4);
+            ctx.closePath();
+            ctx.fillStyle = thrusterGrad;
+            ctx.shadowColor = this.rapidFireTimer > 0 ? '#facc15' : '#00f0ff';
+            ctx.shadowBlur = 16;
+            ctx.fill();
+
             if (this.shieldTimer > 0) {
+                const shieldAngle = (now * 0.003) % (Math.PI * 2);
+                ctx.save();
+                ctx.rotate(shieldAngle);
                 ctx.beginPath();
-                ctx.arc(0, 0, this.width * 0.85, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(0, 240, 255, 0.15)';
+                ctx.arc(0, 0, this.width * 0.9, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0, 240, 255, 0.12)';
                 ctx.fill();
                 ctx.strokeStyle = '#00f0ff';
                 ctx.lineWidth = 2;
+                ctx.setLineDash([8, 6]);
                 ctx.shadowColor = '#00f0ff';
-                ctx.shadowBlur = 15;
+                ctx.shadowBlur = 18;
                 ctx.stroke();
+                ctx.restore();
             }
 
             ctx.shadowColor = '#00f0ff';
@@ -422,34 +444,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
             ctx.beginPath();
             ctx.moveTo(0, -this.height / 2);
-            ctx.lineTo(this.width / 2, this.height / 2 - 6);
-            ctx.lineTo(this.width / 4, this.height / 2);
-            ctx.lineTo(0, this.height / 3);
-            ctx.lineTo(-this.width / 4, this.height / 2);
-            ctx.lineTo(-this.width / 2, this.height / 2 - 6);
+            ctx.lineTo(this.width / 2, this.height / 3);
+            ctx.lineTo(this.width / 2 + 6, this.height / 2);
+            ctx.lineTo(this.width / 4, this.height / 2 - 4);
+            ctx.lineTo(0, this.height / 2 + 2);
+            ctx.lineTo(-this.width / 4, this.height / 2 - 4);
+            ctx.lineTo(-this.width / 2 - 6, this.height / 2);
+            ctx.lineTo(-this.width / 2, this.height / 3);
             ctx.closePath();
 
-            const grad = ctx.createLinearGradient(0, -this.height / 2, 0, this.height / 2);
-            grad.addColorStop(0, '#00f0ff');
-            grad.addColorStop(0.5, '#3b82f6');
-            grad.addColorStop(1, '#0b132b');
-            ctx.fillStyle = grad;
+            const hullGrad = ctx.createLinearGradient(0, -this.height / 2, 0, this.height / 2);
+            hullGrad.addColorStop(0, '#38bdf8');
+            hullGrad.addColorStop(0.35, '#1e293b');
+            hullGrad.addColorStop(0.8, '#0f172a');
+            hullGrad.addColorStop(1, '#0284c7');
+            ctx.fillStyle = hullGrad;
             ctx.fill();
 
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 1.8;
             ctx.stroke();
 
+            ctx.fillStyle = '#00f0ff';
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 10;
+            ctx.fillRect(-this.width / 2 - 4, -8, 3, 16);
+            ctx.fillRect(this.width / 2 + 1, -8, 3, 16);
+
             ctx.beginPath();
-            ctx.ellipse(0, -6, 6, 12, 0, 0, Math.PI * 2);
-            ctx.fillStyle = '#ffffff';
+            ctx.ellipse(0, -this.height / 8, 7, 14, 0, 0, Math.PI * 2);
+            const glassGrad = ctx.createRadialGradient(0, -this.height / 8, 2, 0, -this.height / 8, 14);
+            glassGrad.addColorStop(0, '#ffffff');
+            glassGrad.addColorStop(0.5, '#00f0ff');
+            glassGrad.addColorStop(1, 'rgba(15, 23, 42, 0.9)');
+            ctx.fillStyle = glassGrad;
             ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 15;
+            ctx.shadowBlur = 12;
             ctx.fill();
 
-            ctx.fillStyle = '#00f0ff';
-            ctx.fillRect(-this.width / 2, -6, 3, 12);
-            ctx.fillRect(this.width / 2 - 3, -6, 3, 12);
+            ctx.beginPath();
+            ctx.moveTo(0, -this.height / 3);
+            ctx.lineTo(this.width / 4 - 2, 4);
+            ctx.lineTo(-this.width / 4 + 2, 4);
+            ctx.closePath();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
 
             ctx.restore();
         }
@@ -490,12 +530,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         draw() {
             ctx.save();
+            ctx.translate(this.x, this.y);
+
+            const len = Math.abs(this.vy) * 2.2 + 6;
+            const angle = Math.atan2(this.vy, this.vx);
+            ctx.rotate(angle + Math.PI / 2);
+
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.moveTo(0, -len / 2);
+            ctx.lineTo(this.radius, len / 2);
+            ctx.lineTo(-this.radius, len / 2);
+            ctx.closePath();
+
             ctx.fillStyle = this.color;
             ctx.shadowColor = this.color;
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 14;
             ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(0, -len / 4, this.radius * 0.55, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 8;
+            ctx.fill();
+
             ctx.restore();
         }
     }
@@ -562,38 +620,96 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.save();
             ctx.translate(this.x, this.y);
             ctx.shadowColor = this.color;
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 12;
 
             if (this.type === 'SCOUT') {
                 ctx.beginPath();
-                ctx.moveTo(0, this.height / 2);
-                ctx.lineTo(this.width / 2, -this.height / 2);
-                ctx.lineTo(0, -this.height / 4);
-                ctx.lineTo(-this.width / 2, -this.height / 2);
+                ctx.moveTo(0, this.height / 2 + 4);
+                ctx.lineTo(this.width / 2 + 4, -this.height / 2);
+                ctx.lineTo(0, -this.height / 6);
+                ctx.lineTo(-this.width / 2 - 4, -this.height / 2);
                 ctx.closePath();
-                ctx.fillStyle = '#00f0ff';
+
+                const grad = ctx.createLinearGradient(0, -this.height / 2, 0, this.height / 2);
+                grad.addColorStop(0, '#00f0ff');
+                grad.addColorStop(0.7, '#0f172a');
+                grad.addColorStop(1, '#0284c7');
+                ctx.fillStyle = grad;
                 ctx.fill();
+
                 ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.5;
                 ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(0, 0, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#00f0ff';
+                ctx.shadowBlur = 10;
+                ctx.fill();
+
             } else if (this.type === 'FIGHTER') {
                 ctx.beginPath();
-                ctx.moveTo(0, this.height / 2);
-                ctx.lineTo(this.width / 2, 0);
-                ctx.lineTo(0, -this.height / 2);
-                ctx.lineTo(-this.width / 2, 0);
+                ctx.moveTo(0, this.height / 2 + 6);
+                ctx.lineTo(this.width / 2 + 4, -4);
+                ctx.lineTo(this.width / 3, -this.height / 2);
+                ctx.lineTo(-this.width / 3, -this.height / 2);
+                ctx.lineTo(-this.width / 2 - 4, -4);
                 ctx.closePath();
-                ctx.fillStyle = '#a855f7';
+
+                const grad = ctx.createLinearGradient(0, -this.height / 2, 0, this.height / 2);
+                grad.addColorStop(0, '#c084fc');
+                grad.addColorStop(0.5, '#581c87');
+                grad.addColorStop(1, '#0f172a');
+                ctx.fillStyle = grad;
                 ctx.fill();
-                ctx.strokeStyle = '#ffffff';
-                ctx.stroke();
-            } else {
-                ctx.beginPath();
-                ctx.arc(0, 0, this.width / 2, 0, Math.PI * 2);
-                ctx.fillStyle = '#ef4444';
-                ctx.fill();
-                ctx.strokeStyle = '#facc15';
+
+                ctx.strokeStyle = '#a855f7';
                 ctx.lineWidth = 2;
                 ctx.stroke();
+
+                ctx.fillStyle = '#e9d5ff';
+                ctx.fillRect(-this.width / 2 - 2, -6, 4, 12);
+                ctx.fillRect(this.width / 2 - 2, -6, 4, 12);
+
+                ctx.beginPath();
+                ctx.arc(0, -2, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#a855f7';
+                ctx.shadowBlur = 12;
+                ctx.fill();
+
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(0, this.height / 2 + 6);
+                ctx.lineTo(this.width / 2, 10);
+                ctx.lineTo(this.width / 2 - 4, -this.height / 2);
+                ctx.lineTo(-this.width / 2 + 4, -this.height / 2);
+                ctx.lineTo(-this.width / 2, 10);
+                ctx.closePath();
+
+                const grad = ctx.createLinearGradient(0, -this.height / 2, 0, this.height / 2);
+                grad.addColorStop(0, '#f87171');
+                grad.addColorStop(0.4, '#991b1b');
+                grad.addColorStop(1, '#0f172a');
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                ctx.strokeStyle = '#facc15';
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(0, 0, 12, 0, Math.PI * 2);
+                ctx.fillStyle = '#facc15';
+                ctx.shadowColor = '#facc15';
+                ctx.shadowBlur = 15;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(0, 0, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
             }
 
             ctx.restore();
@@ -667,33 +783,56 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.save();
             ctx.translate(this.x, this.y);
             ctx.shadowColor = '#facc15';
-            ctx.shadowBlur = 20;
+            ctx.shadowBlur = 25;
+
+            const now = Date.now();
 
             ctx.beginPath();
-            ctx.moveTo(0, this.height / 2);
-            ctx.lineTo(this.width / 2, 10);
-            ctx.lineTo(this.width / 2 - 15, -this.height / 2);
-            ctx.lineTo(-this.width / 2 + 15, -this.height / 2);
-            ctx.lineTo(-this.width / 2, 10);
+            ctx.moveTo(0, this.height / 2 + 10);
+            ctx.lineTo(this.width / 2 + 10, 16);
+            ctx.lineTo(this.width / 2, -this.height / 4);
+            ctx.lineTo(this.width / 3, -this.height / 2);
+            ctx.lineTo(-this.width / 3, -this.height / 2);
+            ctx.lineTo(-this.width / 2, -this.height / 4);
+            ctx.lineTo(-this.width / 2 - 10, 16);
             ctx.closePath();
 
             const grad = ctx.createLinearGradient(0, -this.height / 2, 0, this.height / 2);
-            grad.addColorStop(0, '#facc15');
-            grad.addColorStop(0.5, '#ef4444');
+            grad.addColorStop(0, '#fbbf24');
+            grad.addColorStop(0.3, '#dc2626');
+            grad.addColorStop(0.7, '#1e1b4b');
             grad.addColorStop(1, '#0b132b');
             ctx.fillStyle = grad;
             ctx.fill();
 
             ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2.5;
+            ctx.lineWidth = 3;
             ctx.stroke();
 
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(-this.width / 2 - 12, -10, 8, 30);
+            ctx.fillRect(this.width / 2 + 4, -10, 8, 30);
+
+            const coreRadius = 18 + Math.sin(now * 0.005) * 3;
             ctx.beginPath();
-            ctx.arc(0, 0, 16, 0, Math.PI * 2);
-            ctx.fillStyle = '#ffffff';
-            ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 25;
+            ctx.arc(0, -4, coreRadius, 0, Math.PI * 2);
+            const coreGrad = ctx.createRadialGradient(0, -4, 2, 0, -4, coreRadius);
+            coreGrad.addColorStop(0, '#ffffff');
+            coreGrad.addColorStop(0.5, '#facc15');
+            coreGrad.addColorStop(1, '#ef4444');
+            ctx.fillStyle = coreGrad;
+            ctx.shadowColor = '#facc15';
+            ctx.shadowBlur = 30;
             ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(-this.width / 3, -10);
+            ctx.lineTo(this.width / 3, -10);
+            ctx.moveTo(-this.width / 4, 15);
+            ctx.lineTo(this.width / 4, 15);
+            ctx.strokeStyle = 'rgba(250, 204, 21, 0.6)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
 
             ctx.restore();
         }
@@ -774,24 +913,41 @@ document.addEventListener('DOMContentLoaded', () => {
         draw() {
             ctx.save();
             ctx.translate(this.x, this.y);
-            ctx.rotate(this.rotation);
 
+            const now = Date.now();
+            const pulseSize = this.radius + Math.sin(now * 0.008) * 2;
+
+            ctx.save();
+            ctx.rotate(this.rotation);
             ctx.beginPath();
-            ctx.moveTo(0, -this.radius);
-            ctx.lineTo(this.radius, 0);
-            ctx.lineTo(0, this.radius);
-            ctx.lineTo(-this.radius, 0);
+            ctx.arc(0, 0, pulseSize + 4, 0, Math.PI * 2);
+            ctx.strokeStyle = this.info.color;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 6]);
+            ctx.shadowColor = this.info.color;
+            ctx.shadowBlur = 12;
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.rotate(this.rotation * 0.5);
+            ctx.beginPath();
+            ctx.moveTo(0, -pulseSize);
+            ctx.lineTo(pulseSize, 0);
+            ctx.lineTo(0, pulseSize);
+            ctx.lineTo(-pulseSize, 0);
             ctx.closePath();
 
-            ctx.fillStyle = 'rgba(11, 19, 43, 0.85)';
+            const gemGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, pulseSize);
+            gemGrad.addColorStop(0, '#ffffff');
+            gemGrad.addColorStop(0.6, this.info.color);
+            gemGrad.addColorStop(1, '#0b132b');
+            ctx.fillStyle = gemGrad;
             ctx.fill();
-            ctx.strokeStyle = this.info.color;
-            ctx.lineWidth = 2;
-            ctx.shadowColor = this.info.color;
-            ctx.shadowBlur = 15;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
             ctx.stroke();
 
-            ctx.rotate(-this.rotation);
+            ctx.rotate(-this.rotation * 0.5);
             ctx.font = '14px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -1396,6 +1552,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const dy = (Math.random() - 0.5) * screenShakeIntensity;
             ctx.translate(dx, dy);
         }
+
+        // Draw Scrolling Cyber Sci-Fi Space Grid
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.05)';
+        ctx.lineWidth = 1;
+        const gridOffset = (Date.now() * 0.035) % 40;
+        for (let y = gridOffset; y < height; y += 40) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        }
+        for (let x = 0; x < width; x += 50) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            ctx.stroke();
+        }
+        ctx.restore();
 
         nebulae.forEach(n => {
             n.y += n.vy;
