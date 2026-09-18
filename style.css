@@ -82,16 +82,21 @@ body {
     display: none !important;
 }
 
+.lbl-full { display: inline; }
+.lbl-short { display: none; }
+
 /* 3. GLASSMORPHISM HUD */
 .game-hud {
     position: absolute;
-    top: 10px;
-    left: 10px;
-    right: 10px;
+    top: max(8px, env(safe-area-inset-top));
+    left: 8px;
+    right: 8px;
+    width: calc(100% - 16px);
+    box-sizing: border-box;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 14px;
+    padding: 8px 12px;
     background: var(--bg-card);
     backdrop-filter: blur(12px);
     border: 1px solid var(--border-glass);
@@ -866,4 +871,110 @@ body {
     opacity: 0.4;
     background: rgba(100, 116, 139, 0.5);
     box-shadow: none;
+}
+
+/* RESPONSIVE MOBILE HUD OPTIMIZATIONS */
+@media (max-width: 520px) {
+    .lbl-full { display: none !important; }
+    .lbl-short { display: inline !important; }
+
+    .game-hud {
+        top: max(6px, env(safe-area-inset-top));
+        left: 6px;
+        right: 6px;
+        width: calc(100% - 12px);
+        padding: 5px 8px;
+        border-radius: 12px;
+        box-sizing: border-box;
+    }
+
+    .hud-box {
+        gap: 5px;
+    }
+
+    .hud-label {
+        font-size: 0.52rem;
+        letter-spacing: 0.5px;
+    }
+
+    .hud-value {
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+
+    .hud-wave-badge {
+        padding: 2px 7px;
+        font-size: 0.68rem;
+        border-radius: 12px;
+    }
+
+    .hud-combo-tag {
+        font-size: 0.65rem;
+    }
+
+    .hp-metric {
+        min-width: 55px;
+    }
+
+    .hp-bar-container {
+        width: 60px;
+        height: 8px;
+    }
+
+    .nuke-hud-btn {
+        padding: 2px 5px;
+        font-size: 0.72rem;
+        border-radius: 12px;
+    }
+
+    .hud-icon-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
+    }
+
+    .active-powerups-list {
+        gap: 2px;
+    }
+
+    .pu-icon-badge {
+        width: 18px;
+        height: 18px;
+        font-size: 0.6rem;
+    }
+
+    .boss-hp-container {
+        top: 50px;
+        left: 6px;
+        right: 6px;
+        padding: 5px 8px;
+    }
+}
+
+@media (max-width: 380px) {
+    .game-hud {
+        padding: 4px 6px;
+    }
+
+    .hud-box {
+        gap: 3px;
+    }
+
+    .hud-value {
+        font-size: 0.75rem;
+    }
+
+    .hp-bar-container {
+        width: 48px;
+    }
+
+    .hud-wave-badge {
+        padding: 2px 5px;
+        font-size: 0.62rem;
+    }
+
+    .nuke-hud-btn {
+        font-size: 0.65rem;
+        padding: 2px 4px;
+    }
 }
